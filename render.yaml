@@ -1,0 +1,12 @@
+services:
+- type: web
+  name: uni-rate-hub
+  env: docker
+  # The port your Docker container exposes (Tomcat default)
+  port: 8080
+  # The region to deploy to
+  region: oregon # or other region
+  # The instance type (use 'starter' for free tier testing)
+  plan: starter
+  # The GitHub repository branch to build from
+  branch: main
