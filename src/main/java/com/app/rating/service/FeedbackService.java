@@ -2,7 +2,7 @@ package com.app.rating.service;
 
 import com.app.rating.model.Course;
 import com.app.rating.model.Feedback;
-
+import com.app.rating.model.Question; // <-- ADDED: Necessary for dynamic question feature
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -19,6 +19,9 @@ public class FeedbackService {
     private static final List<Feedback> FEEDBACK_DB = new ArrayList<>();
     private static int FEEDBACK_ID_COUNTER = 1;
 
+    // *** ADDED: Static storage for questions ***
+    private static final List<Question> GLOBAL_QUESTIONS = new ArrayList<>();
+
     // Static initializer to populate initial courses and some mock data
     static {
         // Initial Course Listings
@@ -28,23 +31,21 @@ public class FeedbackService {
 
         // Mock Feedback 1
         Feedback f1 = new Feedback(); 
-        f1.setCourseId(101); 
-        f1.setQualityRating(5); 
-        f1.setAssignmentRating(4); 
-        f1.setGradingRating(5); 
-        f1.setReviewText("Excellent professor, highly recommended."); 
-        f1.setTimestamp(System.currentTimeMillis());
+        f1.setCourseId(101); f1.setQualityRating(5); f1.setAssignmentRating(4); f1.setGradingRating(5); 
+        f1.setReviewText("Excellent professor, highly recommended."); f1.setTimestamp(System.currentTimeMillis());
         addFeedback(f1); 
         
         // Mock Feedback 2
         Feedback f2 = new Feedback(); 
-        f2.setCourseId(101); 
-        f2.setQualityRating(4); 
-        f2.setAssignmentRating(3); 
-        f2.setGradingRating(4); 
-        f2.setReviewText("Assignments were a bit heavy but fair grading."); 
-        f2.setTimestamp(System.currentTimeMillis() - 10000); 
+        f2.setCourseId(101); f2.setQualityRating(4); f2.setAssignmentRating(3); f2.setGradingRating(4); 
+        f2.setReviewText("Assignments were a bit heavy but fair grading."); f2.setTimestamp(System.currentTimeMillis() - 10000);
         addFeedback(f2);
+
+        // *** ADDED: Initialize Global Questions ***
+        GLOBAL_QUESTIONS.add(new Question(1, "Teaching Quality", "RATING", true));
+        GLOBAL_QUESTIONS.add(new Question(2, "Assignment Load/Relevance", "RATING", true));
+        GLOBAL_QUESTIONS.add(new Question(3, "Grading Fairness", "RATING", true));
+        GLOBAL_QUESTIONS.add(new Question(4, "What could the professor do to improve next semester?", "TEXT", false));
     }
     // -------------------------------------------------------------------
 
@@ -63,6 +64,13 @@ public class FeedbackService {
         Optional<Course> courseOpt = COURSE_DB.stream().filter(c -> c.getId() == id).findFirst();
         courseOpt.ifPresent(this::calculateCourseAverages); 
         return courseOpt;
+    }
+
+    /**
+     * *** ADDED: Retrieves all available feedback questions (Resolves JSP compilation error). ***
+     */
+    public List<Question> getAllQuestions() {
+        return GLOBAL_QUESTIONS;
     }
 
     private void calculateCourseAverages(Course course) {
@@ -107,11 +115,9 @@ public class FeedbackService {
     }
 
     /**
-     * *** NEW METHOD: Allows creation of new courses. ***
+     * Allows creation of new courses (used by CreateCourseServlet).
      */
     public static void addCourse(Course newCourse) {
-        // Since we are not auto-generating IDs outside the static block, 
-        // we trust the calling method (CreateCourseServlet) to provide a unique ID.
         COURSE_DB.add(newCourse);
     }
     
