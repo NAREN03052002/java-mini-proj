@@ -1,28 +1,35 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="com.app.rating.model.Course" %>
+<%@ page import="com.app.rating.model.Question" %>
 <%@ page import="com.app.rating.service.FeedbackService" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Optional" %>
 
 <%
-    // Controller logic to fetch the course details for the form header
+    // --- Controller Logic (Scriptlet) ---
     int courseId = 0;
     try {
         courseId = Integer.parseInt(request.getParameter("courseId"));
     } catch (NumberFormatException e) {
-        // If no valid courseId, redirect back to the list
         response.sendRedirect("courses");
         return;
     }
     
-    // Fetch course details using the Service layer (Ensure this Service method is updated to calculate averages!)
-    Optional<Course> courseOpt = new FeedbackService().getCourseById(courseId);
+    FeedbackService service = new FeedbackService();
+
+    // 1. Fetch Course Details
+    Optional<Course> courseOpt = service.getCourseById(courseId);
     if (!courseOpt.isPresent()) {
         response.sendRedirect("courses");
         return;
     }
     Course course = courseOpt.get();
     request.setAttribute("courseDetail", course);
+    
+    // 2. *** NEW: Fetch Questions from the Service (Preparing for dynamic rendering) ***
+    List<Question> questionList = service.getAllQuestions();
+    request.setAttribute("questionList", questionList);
 %>
 
 <!DOCTYPE html>
@@ -60,7 +67,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">1. Teaching Quality (1=Poor, 5=Excellent)</label>
                     <div class="flex space-x-1 text-3xl text-gray-300" id="stars-quality">
-                        </div>
+                    </div>
                     <input type="hidden" id="qualityRating" name="qualityRating" required value="0">
                 </div>
 
@@ -106,7 +113,6 @@
                 { containerId: 'stars-grading', inputId: 'gradingRating' }
             ];
 
-            // Function to initialize stars and set up click handlers
             function initializeStars() {
                 ratingParams.forEach(param => {
                     const container = document.getElementById(param.containerId);
@@ -123,9 +129,7 @@
                 });
             }
 
-            // Function to handle star selection visual and data update
             function setRating(container, inputField, value) {
-                // Update visual stars
                 container.querySelectorAll('.rating-star').forEach(star => {
                     const starValue = parseInt(star.getAttribute('data-value'));
                     if (starValue <= value) {
@@ -134,8 +138,6 @@
                         star.classList.remove('filled');
                     }
                 });
-
-                // Update hidden form field value
                 inputField.value = value;
             }
 
