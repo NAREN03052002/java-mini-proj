@@ -29,12 +29,26 @@
     </header>
 
     <main class="container mx-auto px-4 py-10">
-        <h2 class="text-4xl font-bold text-gray-800 mb-8 border-b pb-3">All Course Feedback</h2>
+        
+        <div class="mb-8 flex justify-between items-center border-b pb-3">
+            <h2 class="text-4xl font-bold text-gray-800">All Course Feedback</h2>
+            <a href="create_course_form.jsp" class="bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-green-700 transition shadow-md">
+                + Add New Course
+            </a>
+        </div>
+        
 
         <c:if test="${param.success == 'true'}">
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
                 <strong class="font-bold">Success!</strong>
                 <span class="block sm:inline">Your anonymous feedback has been recorded.</span>
+            </div>
+        </c:if>
+        
+        <c:if test="${param.newCourse == 'true'}">
+            <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-6" role="alert">
+                <strong class="font-bold">Success!</strong>
+                <span class="block sm:inline">New course has been added to the system.</span>
             </div>
         </c:if>
 
@@ -124,7 +138,7 @@
                         <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 7h16a2 2 0 002-2V5a2 2 0 00-2-2H3a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                     <h3 class="mt-2 text-sm font-semibold text-gray-900">No Courses Available</h3>
-                    <p class="mt-1 text-sm text-gray-500">The service layer did not return any courses. Check the FeedbackService initialization.</p>
+                    <p class="mt-1 text-sm text-gray-500">Be the first to add a course using the button above.</p>
                 </div>
             </c:otherwise>
         </c:choose>
