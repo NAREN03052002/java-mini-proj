@@ -1,5 +1,5 @@
 package com.app.rating.service;
-
+package com.app.rating.model;
 import com.app.rating.model.Course;
 import com.app.rating.model.Feedback;
 import com.app.rating.model.Question; // <-- NEW IMPORT
