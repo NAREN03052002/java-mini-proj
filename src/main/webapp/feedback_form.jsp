@@ -63,7 +63,7 @@
         <form action="submitFeedback" method="POST" id="feedbackForm">
             <input type="hidden" name="courseId" value="${courseDetail.id}">
 
-            <div class="space-y-6">
+            <div class="space-y-6" id="questionsContainer">
                 <c:forEach var="q" items="${questionList}" varStatus="loop">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">${loop.index + 1}. ${q.text} 
@@ -74,12 +74,13 @@
                             <c:when test="${q.type == 'RATING'}">
                                 <div class="flex space-x-1 text-3xl text-gray-300 rating-container" 
                                      id="stars-${q.id}" 
+                                     data-question-id="${q.id}"
                                      data-current-rating="0"> 
-                                </div>
-                                <input type="hidden" id="rating_${q.id}" name="rating_${q.id}" value="0">
+                                    </div>
+                                <input type="hidden" id="rating_${q.id}" name="rating_${q.id}" value="">
                             </c:when>
                             <c:when test="${q.type == 'TEXT'}">
-                                <textarea name="text_${q.id}" rows="3" 
+                                <textarea name="text_${q.id}" id="text_${q.id}" rows="3" 
                                     class="w-full border border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
                                     placeholder="Enter your response here"
                                     <c:if test="${q.required}">required minlength="10"</c:if>
@@ -106,7 +107,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('feedbackForm');
 
-            // 1. Function to update visual stars and the DATA attribute (NOT the hidden input yet)
+            // Function to update visual stars and the DATA attribute
             function setRating(container, ratingValue) {
                 // Update visual stars
                 container.querySelectorAll('.rating-star').forEach(star => {
@@ -118,11 +119,11 @@
                     }
                 });
 
-                // Update the data attribute on the container div
+                // Update the data attribute on the container div (The source of truth)
                 container.setAttribute('data-current-rating', ratingValue);
             }
 
-            // 2. Initial Star Rendering & Event Delegation Setup
+            // Initial Star Rendering & Event Delegation Setup
             const ratingContainers = document.querySelectorAll('.rating-container');
             ratingContainers.forEach(container => {
                 for (let i = 1; i <= 5; i++) {
@@ -134,7 +135,7 @@
                 }
             });
             
-            // Attach ONE event listener to the form element
+            // Attach ONE event listener to the form element for delegation
             form.addEventListener('click', function(event) {
                 let target = event.target;
                 if (target.classList.contains('rating-star')) {
@@ -147,32 +148,35 @@
             });
 
 
-            // 3. *** FINAL GUARANTEE: Intercept form submission to set the hidden field values ***
+            // *** FINAL GUARANTEE FIX: Intercept submission and manually set required rating values ***
             form.addEventListener('submit', function(event) {
-                let success = true;
+                let ratingMissing = false;
 
                 ratingContainers.forEach(container => {
-                    const questionId = container.id.split('-')[1];
+                    const questionId = container.getAttribute('data-question-id');
                     const hiddenInput = document.getElementById(`rating_${questionId}`);
                     const selectedRating = container.getAttribute('data-current-rating');
 
-                    // If the hidden input exists (it's a rating field)
                     if (hiddenInput) {
-                        // CRITICAL: Force the value from the reliable data attribute into the input field
+                        // CRITICAL FIX: Force the value from the data attribute into the input field
                         hiddenInput.value = selectedRating;
                         
-                        // Perform client-side validation check again
+                        // If the field is required (we check for its existence for simplicity)
+                        // and the value is still '0', prevent submission.
+                        // NOTE: Server-side validation is still the final authority.
                         if (hiddenInput.hasAttribute('required') && parseInt(selectedRating) === 0) {
-                            success = false;
+                            ratingMissing = true;
                         }
                     }
                 });
                 
-                if (!success) {
-                    // Prevent submission and show a generic error if the forced check fails
+                if (ratingMissing) {
+                    // Prevent submission and show native HTML form validation message
                     event.preventDefault();
-                    alert("Please provide a rating (1-5 stars) for all required fields.");
+                    // NOTE: The server redirect will handle the persistent error message using the 'Error!' block.
                 }
+                
+                // If rating is present, the form proceeds and the server handles text validation.
             });
         });
     </script>
