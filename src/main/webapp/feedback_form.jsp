@@ -116,7 +116,7 @@
                     }
                 });
 
-                // Update hidden form field value (THIS IS THE CRITICAL LINE)
+                // Update hidden form field value (This is the critical step)
                 inputField.value = value;
             }
 
@@ -132,10 +132,12 @@
                     star.textContent = '★';
                     star.setAttribute('data-value', i);
                     
-                    // Attach event listener using closure to pass correct values
-                    star.addEventListener('click', function() {
-                        setRating(container, inputField, i);
-                    });
+                    // Use a clean event listener with closure to ensure 'i' is correctly captured
+                    star.addEventListener('click', (function(ratingValue) {
+                        return function() {
+                            setRating(container, inputField, ratingValue);
+                        };
+                    })(i));
 
                     container.appendChild(star);
                 }
