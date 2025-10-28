@@ -27,7 +27,7 @@
     Course course = courseOpt.get();
     request.setAttribute("courseDetail", course);
     
-    // 2. Fetch Questions from the Service (Now guaranteed to work after FeedbackService update)
+    // 2. Fetch Questions from the Service
     List<Question> questionList = service.getAllQuestions();
     request.setAttribute("questionList", questionList);
 %>
@@ -109,6 +109,7 @@
                 const inputField = document.getElementById(`rating_${questionId}`);
 
                 // 1. Initialize stars visually
+                // NOTE: All hidden input fields default to value="0" and must be updated by clicking.
                 for (let i = 1; i <= 5; i++) {
                     const star = document.createElement('span');
                     star.className = 'rating-star';
