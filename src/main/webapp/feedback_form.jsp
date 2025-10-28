@@ -100,10 +100,10 @@
         </form>
     </div>
 
-    <script>
+   <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const ratingContainers = document.querySelectorAll('.rating-container');
-            
+            const form = document.getElementById('feedbackForm');
+
             // Function to handle star selection logic
             function setRating(container, inputField, value) {
                 // Update visual stars
@@ -116,33 +116,55 @@
                     }
                 });
 
-                // Update hidden form field value (This is the critical step)
+                // Update hidden form field value (CRITICAL STEP)
                 inputField.value = value;
             }
 
-            // Loop through all dynamic rating containers and attach event listeners
-            ratingContainers.forEach(container => {
-                const questionId = container.id.split('-')[1];
-                const inputField = document.getElementById(`rating_${questionId}`);
+            // --- Event Delegation Implementation ---
+            // Attach a single listener to the form to capture clicks on any star
+            form.addEventListener('click', function(event) {
+                let target = event.target;
 
-                // 1. Initialize stars visually and attach click event
+                // 1. Check if the clicked element is a star
+                if (target.classList.contains('rating-star')) {
+                    // Prevent default action (though stars don't have one)
+                    event.preventDefault();
+
+                    // 2. Find the immediate parent container (div with class rating-container)
+                    let container = target.closest('.rating-container');
+                    if (!container) return; 
+
+                    // 3. Extract the question ID from the container's ID
+                    const questionId = container.id.split('-')[1];
+                    
+                    // 4. Find the corresponding hidden input field by its ID
+                    const inputField = document.getElementById(`rating_${questionId}`);
+                    
+                    if (inputField) {
+                        // 5. Get the rating value from the star's data attribute
+                        const ratingValue = parseInt(target.getAttribute('data-value'));
+                        
+                        // 6. Call the setter function
+                        setRating(container, inputField, ratingValue);
+                    }
+                }
+            });
+
+            // --- Initial Star Rendering ---
+            // Since the stars are rendered by JS, we must explicitly generate them
+            const ratingContainers = document.querySelectorAll('.rating-container');
+            ratingContainers.forEach(container => {
                 for (let i = 1; i <= 5; i++) {
                     const star = document.createElement('span');
                     star.className = 'rating-star';
                     star.textContent = '★';
                     star.setAttribute('data-value', i);
-                    
-                    // Use a clean event listener with closure to ensure 'i' is correctly captured
-                    star.addEventListener('click', (function(ratingValue) {
-                        return function() {
-                            setRating(container, inputField, ratingValue);
-                        };
-                    })(i));
-
                     container.appendChild(star);
                 }
             });
         });
     </script>
+</body>
+</html>
 </body>
 </html>
