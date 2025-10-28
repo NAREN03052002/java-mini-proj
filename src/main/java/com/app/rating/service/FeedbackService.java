@@ -2,7 +2,7 @@ package com.app.rating.service;
 
 import com.app.rating.model.Course;
 import com.app.rating.model.Feedback;
-import com.app.rating.model.Question; // <-- ADDED: Necessary for dynamic question feature
+import com.app.rating.model.Question; // CRITICAL: Now imported correctly
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -19,7 +19,7 @@ public class FeedbackService {
     private static final List<Feedback> FEEDBACK_DB = new ArrayList<>();
     private static int FEEDBACK_ID_COUNTER = 1;
 
-    // *** ADDED: Static storage for questions ***
+    // *** Static storage for questions ***
     private static final List<Question> GLOBAL_QUESTIONS = new ArrayList<>();
 
     // Static initializer to populate initial courses and some mock data
@@ -41,7 +41,8 @@ public class FeedbackService {
         f2.setReviewText("Assignments were a bit heavy but fair grading."); f2.setTimestamp(System.currentTimeMillis() - 10000);
         addFeedback(f2);
 
-        // *** ADDED: Initialize Global Questions ***
+        // *** Initialize Global Questions (Resolves the 'undefined method' error) ***
+        // These match the fields currently hardcoded in feedback_form.jsp
         GLOBAL_QUESTIONS.add(new Question(1, "Teaching Quality", "RATING", true));
         GLOBAL_QUESTIONS.add(new Question(2, "Assignment Load/Relevance", "RATING", true));
         GLOBAL_QUESTIONS.add(new Question(3, "Grading Fairness", "RATING", true));
@@ -58,7 +59,7 @@ public class FeedbackService {
     }
 
     /**
-     * Retrieves a single course by ID.
+     * Retrieves a single course by ID, ensuring averages are calculated.
      */
     public Optional<Course> getCourseById(int id) {
         Optional<Course> courseOpt = COURSE_DB.stream().filter(c -> c.getId() == id).findFirst();
@@ -67,7 +68,8 @@ public class FeedbackService {
     }
 
     /**
-     * *** ADDED: Retrieves all available feedback questions (Resolves JSP compilation error). ***
+     * Retrieves all available feedback questions.
+     * This method was missing and caused the previous compilation failure.
      */
     public List<Question> getAllQuestions() {
         return GLOBAL_QUESTIONS;
