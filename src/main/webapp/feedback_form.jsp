@@ -7,7 +7,7 @@
 <%@ page import="java.util.Optional" %>
 
 <%
-    // Controller Logic to fetch Course and Questions
+    // --- Controller Logic (Scriptlet) ---
     int courseId = 0;
     try {
         courseId = Integer.parseInt(request.getParameter("courseId"));
@@ -17,6 +17,8 @@
     }
     
     FeedbackService service = new FeedbackService();
+
+    // 1. Fetch Course Details
     Optional<Course> courseOpt = service.getCourseById(courseId);
     if (!courseOpt.isPresent()) {
         response.sendRedirect("courses");
@@ -25,7 +27,7 @@
     Course course = courseOpt.get();
     request.setAttribute("courseDetail", course);
     
-    // Fetch Questions
+    // 2. Fetch Questions from the Service
     List<Question> questionList = service.getAllQuestions();
     request.setAttribute("questionList", questionList);
 %>
@@ -70,16 +72,19 @@
                         
                         <c:choose>
                             <c:when test="${q.type == 'RATING'}">
-                                <div class="flex space-x-1 text-3xl text-gray-300 rating-container" id="stars-${q.id}">
-                                    </div>
-                                <input type="hidden" id="rating_${q.id}" name="rating_${q.id}" value="0" <c:if test="${q.required}">required</c:if>>
+                                <div class="flex space-x-1 text-3xl text-gray-300 rating-container" 
+                                     id="stars-${q.id}" 
+                                     data-current-rating="0"> 
+                                </div>
+                                <input type="hidden" id="rating_${q.id}" name="rating_${q.id}" value="0">
                             </c:when>
                             <c:when test="${q.type == 'TEXT'}">
                                 <textarea name="text_${q.id}" rows="3" 
                                     class="w-full border border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
                                     placeholder="Enter your response here"
-                                    <c:if test="${q.required}">required</c:if>
+                                    <c:if test="${q.required}">required minlength="10"</c:if>
                                 ></textarea>
+                                <c:if test="${!q.required}"><p class="text-xs text-gray-500 mt-1">Optional comment.</p></c:if>
                             </c:when>
                         </c:choose>
                     </div>
@@ -99,38 +104,76 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const ratingContainers = document.querySelectorAll('.rating-container');
-            
-            ratingContainers.forEach(container => {
-                const questionId = container.id.split('-')[1];
-                const inputField = document.getElementById(`rating_${questionId}`);
+            const form = document.getElementById('feedbackForm');
 
-                // 1. Initialize stars visually
-                for (let i = 1; i <= 5; i++) {
-                    const star = document.createElement('span');
-                    star.className = 'rating-star';
-                    star.textContent = '★';
-                    star.setAttribute('data-value', i);
-                    star.addEventListener('click', () => setRating(container, inputField, i));
-                    container.appendChild(star);
-                }
-            });
-
-            // 2. Function to handle star selection visual and data update
-            function setRating(container, inputField, value) {
+            // 1. Function to update visual stars and the DATA attribute (NOT the hidden input yet)
+            function setRating(container, ratingValue) {
                 // Update visual stars
                 container.querySelectorAll('.rating-star').forEach(star => {
                     const starValue = parseInt(star.getAttribute('data-value'));
-                    if (starValue <= value) {
+                    if (starValue <= ratingValue) {
                         star.classList.add('filled');
                     } else {
                         star.classList.remove('filled');
                     }
                 });
 
-                // Update hidden form field value
-                inputField.value = value;
+                // Update the data attribute on the container div
+                container.setAttribute('data-current-rating', ratingValue);
             }
+
+            // 2. Initial Star Rendering & Event Delegation Setup
+            const ratingContainers = document.querySelectorAll('.rating-container');
+            ratingContainers.forEach(container => {
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('span');
+                    star.className = 'rating-star';
+                    star.textContent = '★';
+                    star.setAttribute('data-value', i);
+                    container.appendChild(star);
+                }
+            });
+            
+            // Attach ONE event listener to the form element
+            form.addEventListener('click', function(event) {
+                let target = event.target;
+                if (target.classList.contains('rating-star')) {
+                    let container = target.closest('.rating-container');
+                    if (!container) return; 
+
+                    const ratingValue = parseInt(target.getAttribute('data-value'));
+                    setRating(container, ratingValue);
+                }
+            });
+
+
+            // 3. *** FINAL GUARANTEE: Intercept form submission to set the hidden field values ***
+            form.addEventListener('submit', function(event) {
+                let success = true;
+
+                ratingContainers.forEach(container => {
+                    const questionId = container.id.split('-')[1];
+                    const hiddenInput = document.getElementById(`rating_${questionId}`);
+                    const selectedRating = container.getAttribute('data-current-rating');
+
+                    // If the hidden input exists (it's a rating field)
+                    if (hiddenInput) {
+                        // CRITICAL: Force the value from the reliable data attribute into the input field
+                        hiddenInput.value = selectedRating;
+                        
+                        // Perform client-side validation check again
+                        if (hiddenInput.hasAttribute('required') && parseInt(selectedRating) === 0) {
+                            success = false;
+                        }
+                    }
+                });
+                
+                if (!success) {
+                    // Prevent submission and show a generic error if the forced check fails
+                    event.preventDefault();
+                    alert("Please provide a rating (1-5 stars) for all required fields.");
+                }
+            });
         });
     </script>
 </body>
