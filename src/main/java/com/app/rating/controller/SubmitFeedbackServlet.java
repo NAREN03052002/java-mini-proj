@@ -28,7 +28,6 @@ public class SubmitFeedbackServlet extends HttpServlet {
         int courseId = 0;
         
         try {
-            // 1. Fetch fixed parameters and all questions
             courseId = Integer.parseInt(request.getParameter("courseId"));
             List<Question> allQuestions = service.getAllQuestions();
             Map<Integer, String> dynamicAnswers = new HashMap<>();
@@ -48,24 +47,36 @@ public class SubmitFeedbackServlet extends HttpServlet {
                 
                 String answer = request.getParameter(paramName);
                 
-                // Validation Logic
+                // *** HARDENED VALIDATION LOGIC START ***
                 if (q.isRequired()) {
+                    // Check 1: Must not be null/empty for any required field
                     if (answer == null || answer.trim().isEmpty()) {
-                        // Case 1: Null or empty required field
                         validationError = "Required field missing: " + q.getText();
-                        break; 
+                        break;
                     }
+                    
+                    // Check 2: Text length validation
                     if (q.getType().equals("TEXT") && answer.trim().length() < 10) {
-                        // Case 2: Required text field too short
                         validationError = "Written review must be at least 10 characters long.";
-                        break; 
+                        break;
                     }
-                    if (q.getType().equals("RATING") && Integer.parseInt(answer) == 0) {
-                        // Case 3: Required rating field was not clicked (value is "0")
-                        validationError = "Required rating missing or invalid: " + q.getText();
-                        break; 
+                    
+                    // Check 3: RATING MUST be a number > 0. 
+                    if (q.getType().equals("RATING")) {
+                        try {
+                            if (Integer.parseInt(answer) < 1 || Integer.parseInt(answer) > 5) {
+                                // This catches the persistent value of "0" (or less than 1)
+                                validationError = "Required rating missing or invalid: " + q.getText();
+                                break;
+                            }
+                        } catch (NumberFormatException nfe) {
+                            // This catches cases where the answer is non-numeric
+                            validationError = "Invalid numeric rating value submitted for: " + q.getText();
+                            break;
+                        }
                     }
                 }
+                // *** HARDENED VALIDATION LOGIC END ***
                 
                 if (answer != null) {
                     dynamicAnswers.put(q.getId(), answer.trim());
@@ -74,7 +85,6 @@ public class SubmitFeedbackServlet extends HttpServlet {
             
             // Handle validation failure by redirecting back to the form
             if (validationError != null) {
-                // We use encodeURL to ensure the error message handles special characters correctly
                 String redirectURL = request.getContextPath() + "/feedback_form.jsp?courseId=" + courseId + "&error=" + validationError;
                 response.sendRedirect(response.encodeRedirectURL(redirectURL));
                 return;
@@ -90,7 +100,6 @@ public class SubmitFeedbackServlet extends HttpServlet {
             
             // --- BACKWARD COMPATIBILITY FIX ---
             // Manually map the original fixed fields (Q1, Q2, Q3) and the review text (Q6) 
-            // used by the existing average calculation logic in FeedbackService
             feedback.setQualityRating(Integer.parseInt(dynamicAnswers.getOrDefault(1, "0")));
             feedback.setAssignmentRating(Integer.parseInt(dynamicAnswers.getOrDefault(2, "0")));
             feedback.setGradingRating(Integer.parseInt(dynamicAnswers.getOrDefault(3, "0")));
@@ -104,8 +113,8 @@ public class SubmitFeedbackServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/courses?success=true");
 
         } catch (NumberFormatException e) {
-            // Catches errors if user bypasses JS validation (e.g., non-integer in a rating field)
-            String redirectURL = request.getContextPath() + "/feedback_form.jsp?courseId=" + courseId + "&error=Invalid numeric rating value submitted.";
+            // Catches errors if courseId parsing failed (rare if link is correct)
+            String redirectURL = request.getContextPath() + "/courses?error=Invalid course selection.";
             response.sendRedirect(response.encodeRedirectURL(redirectURL));
         } catch (Exception e) {
             // General server error fallback
