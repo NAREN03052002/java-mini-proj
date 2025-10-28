@@ -50,12 +50,19 @@ public class SubmitFeedbackServlet extends HttpServlet {
                 
                 // Validation Logic
                 if (q.isRequired()) {
-                    if (answer == null || answer.trim().isEmpty() || 
-                       (q.getType().equals("TEXT") && answer.trim().length() < 10) || 
-                       (q.getType().equals("RATING") && Integer.parseInt(answer) == 0)) {
-                        
-                        // Set specific error message for redirect
-                        validationError = "Required field missing or invalid: " + q.getText();
+                    if (answer == null || answer.trim().isEmpty()) {
+                        // Case 1: Null or empty required field
+                        validationError = "Required field missing: " + q.getText();
+                        break; 
+                    }
+                    if (q.getType().equals("TEXT") && answer.trim().length() < 10) {
+                        // Case 2: Required text field too short
+                        validationError = "Written review must be at least 10 characters long.";
+                        break; 
+                    }
+                    if (q.getType().equals("RATING") && Integer.parseInt(answer) == 0) {
+                        // Case 3: Required rating field was not clicked (value is "0")
+                        validationError = "Required rating missing or invalid: " + q.getText();
                         break; 
                     }
                 }
@@ -67,7 +74,9 @@ public class SubmitFeedbackServlet extends HttpServlet {
             
             // Handle validation failure by redirecting back to the form
             if (validationError != null) {
-                response.sendRedirect(request.getContextPath() + "/feedback_form.jsp?courseId=" + courseId + "&error=" + validationError);
+                // We use encodeURL to ensure the error message handles special characters correctly
+                String redirectURL = request.getContextPath() + "/feedback_form.jsp?courseId=" + courseId + "&error=" + validationError;
+                response.sendRedirect(response.encodeRedirectURL(redirectURL));
                 return;
             }
 
@@ -80,7 +89,8 @@ public class SubmitFeedbackServlet extends HttpServlet {
             feedback.setAnswers(dynamicAnswers);
             
             // --- BACKWARD COMPATIBILITY FIX ---
-            // Manually map the original fixed fields (Q1, Q2, Q3, Q6) for the old calculation logic in FeedbackService
+            // Manually map the original fixed fields (Q1, Q2, Q3) and the review text (Q6) 
+            // used by the existing average calculation logic in FeedbackService
             feedback.setQualityRating(Integer.parseInt(dynamicAnswers.getOrDefault(1, "0")));
             feedback.setAssignmentRating(Integer.parseInt(dynamicAnswers.getOrDefault(2, "0")));
             feedback.setGradingRating(Integer.parseInt(dynamicAnswers.getOrDefault(3, "0")));
@@ -95,7 +105,8 @@ public class SubmitFeedbackServlet extends HttpServlet {
 
         } catch (NumberFormatException e) {
             // Catches errors if user bypasses JS validation (e.g., non-integer in a rating field)
-            response.sendRedirect(request.getContextPath() + "/feedback_form.jsp?courseId=" + courseId + "&error=Invalid numeric rating value submitted.");
+            String redirectURL = request.getContextPath() + "/feedback_form.jsp?courseId=" + courseId + "&error=Invalid numeric rating value submitted.";
+            response.sendRedirect(response.encodeRedirectURL(redirectURL));
         } catch (Exception e) {
             // General server error fallback
             System.err.println("Error processing feedback: " + e.getMessage());
