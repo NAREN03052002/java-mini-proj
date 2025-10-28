@@ -26,7 +26,6 @@ public class FeedbackService {
         COURSE_DB.add(new Course(202, "MA101", "Calculus I", "Prof. John Smith", "Fall 2024"));
         COURSE_DB.add(new Course(303, "HI305", "Modern History", "Dr. Anya Sharma", "Spring 2024"));
 
-        // *** FIX 1: ADD INITIAL MOCK FEEDBACK TO SHOW RATINGS ***
         // Mock Feedback 1
         Feedback f1 = new Feedback(); 
         f1.setCourseId(101); 
@@ -44,7 +43,7 @@ public class FeedbackService {
         f2.setAssignmentRating(3); 
         f2.setGradingRating(4); 
         f2.setReviewText("Assignments were a bit heavy but fair grading."); 
-        f2.setTimestamp(System.currentTimeMillis() - 10000); // Older timestamp
+        f2.setTimestamp(System.currentTimeMillis() - 10000); 
         addFeedback(f2);
     }
     // -------------------------------------------------------------------
@@ -59,11 +58,9 @@ public class FeedbackService {
 
     /**
      * Retrieves a single course by ID.
-     * Also calculates averages for the requested course.
      */
     public Optional<Course> getCourseById(int id) {
         Optional<Course> courseOpt = COURSE_DB.stream().filter(c -> c.getId() == id).findFirst();
-        // *** FIX 2: Ensure averages are calculated even when fetching a single course ***
         courseOpt.ifPresent(this::calculateCourseAverages); 
         return courseOpt;
     }
@@ -109,6 +106,15 @@ public class FeedbackService {
         FEEDBACK_DB.add(f);
     }
 
+    /**
+     * *** NEW METHOD: Allows creation of new courses. ***
+     */
+    public static void addCourse(Course newCourse) {
+        // Since we are not auto-generating IDs outside the static block, 
+        // we trust the calling method (CreateCourseServlet) to provide a unique ID.
+        COURSE_DB.add(newCourse);
+    }
+    
     public Optional<Course> getTrendingCourse() {
         return COURSE_DB.stream().peek(this::calculateCourseAverages)
                 .filter(c -> c.getTotalRatings() > 0)
