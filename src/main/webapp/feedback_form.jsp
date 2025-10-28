@@ -7,7 +7,7 @@
 <%@ page import="java.util.Optional" %>
 
 <%
-    // --- Controller Logic (Scriptlet) ---
+    // Controller Logic to fetch Course and Questions
     int courseId = 0;
     try {
         courseId = Integer.parseInt(request.getParameter("courseId"));
@@ -17,8 +17,6 @@
     }
     
     FeedbackService service = new FeedbackService();
-
-    // 1. Fetch Course Details
     Optional<Course> courseOpt = service.getCourseById(courseId);
     if (!courseOpt.isPresent()) {
         response.sendRedirect("courses");
@@ -27,7 +25,7 @@
     Course course = courseOpt.get();
     request.setAttribute("courseDetail", course);
     
-    // 2. Fetch Questions from the Service
+    // Fetch Questions
     List<Question> questionList = service.getAllQuestions();
     request.setAttribute("questionList", questionList);
 %>
@@ -73,16 +71,15 @@
                         <c:choose>
                             <c:when test="${q.type == 'RATING'}">
                                 <div class="flex space-x-1 text-3xl text-gray-300 rating-container" id="stars-${q.id}">
-                                </div>
+                                    </div>
                                 <input type="hidden" id="rating_${q.id}" name="rating_${q.id}" value="0" <c:if test="${q.required}">required</c:if>>
                             </c:when>
                             <c:when test="${q.type == 'TEXT'}">
                                 <textarea name="text_${q.id}" rows="3" 
                                     class="w-full border border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
                                     placeholder="Enter your response here"
-                                    <c:if test="${q.required}">required minlength="10"</c:if>
+                                    <c:if test="${q.required}">required</c:if>
                                 ></textarea>
-                                <c:if test="${!q.required}"><p class="text-xs text-gray-500 mt-1">Optional comment.</p></c:if>
                             </c:when>
                         </c:choose>
                     </div>
@@ -100,11 +97,26 @@
         </form>
     </div>
 
-   <script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('feedbackForm');
+            const ratingContainers = document.querySelectorAll('.rating-container');
+            
+            ratingContainers.forEach(container => {
+                const questionId = container.id.split('-')[1];
+                const inputField = document.getElementById(`rating_${questionId}`);
 
-            // Function to handle star selection logic
+                // 1. Initialize stars visually
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('span');
+                    star.className = 'rating-star';
+                    star.textContent = '★';
+                    star.setAttribute('data-value', i);
+                    star.addEventListener('click', () => setRating(container, inputField, i));
+                    container.appendChild(star);
+                }
+            });
+
+            // 2. Function to handle star selection visual and data update
             function setRating(container, inputField, value) {
                 // Update visual stars
                 container.querySelectorAll('.rating-star').forEach(star => {
@@ -116,55 +128,10 @@
                     }
                 });
 
-                // Update hidden form field value (CRITICAL STEP)
+                // Update hidden form field value
                 inputField.value = value;
             }
-
-            // --- Event Delegation Implementation ---
-            // Attach a single listener to the form to capture clicks on any star
-            form.addEventListener('click', function(event) {
-                let target = event.target;
-
-                // 1. Check if the clicked element is a star
-                if (target.classList.contains('rating-star')) {
-                    // Prevent default action (though stars don't have one)
-                    event.preventDefault();
-
-                    // 2. Find the immediate parent container (div with class rating-container)
-                    let container = target.closest('.rating-container');
-                    if (!container) return; 
-
-                    // 3. Extract the question ID from the container's ID
-                    const questionId = container.id.split('-')[1];
-                    
-                    // 4. Find the corresponding hidden input field by its ID
-                    const inputField = document.getElementById(`rating_${questionId}`);
-                    
-                    if (inputField) {
-                        // 5. Get the rating value from the star's data attribute
-                        const ratingValue = parseInt(target.getAttribute('data-value'));
-                        
-                        // 6. Call the setter function
-                        setRating(container, inputField, ratingValue);
-                    }
-                }
-            });
-
-            // --- Initial Star Rendering ---
-            // Since the stars are rendered by JS, we must explicitly generate them
-            const ratingContainers = document.querySelectorAll('.rating-container');
-            ratingContainers.forEach(container => {
-                for (let i = 1; i <= 5; i++) {
-                    const star = document.createElement('span');
-                    star.className = 'rating-star';
-                    star.textContent = '★';
-                    star.setAttribute('data-value', i);
-                    container.appendChild(star);
-                }
-            });
         });
     </script>
-</body>
-</html>
 </body>
 </html>
