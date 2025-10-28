@@ -104,23 +104,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const ratingContainers = document.querySelectorAll('.rating-container');
             
-            ratingContainers.forEach(container => {
-                const questionId = container.id.split('-')[1];
-                const inputField = document.getElementById(`rating_${questionId}`);
-
-                // 1. Initialize stars visually
-                // NOTE: All hidden input fields default to value="0" and must be updated by clicking.
-                for (let i = 1; i <= 5; i++) {
-                    const star = document.createElement('span');
-                    star.className = 'rating-star';
-                    star.textContent = '★';
-                    star.setAttribute('data-value', i);
-                    star.addEventListener('click', () => setRating(container, inputField, i));
-                    container.appendChild(star);
-                }
-            });
-
-            // 2. Function to handle star selection visual and data update
+            // Function to handle star selection logic
             function setRating(container, inputField, value) {
                 // Update visual stars
                 container.querySelectorAll('.rating-star').forEach(star => {
@@ -132,9 +116,30 @@
                     }
                 });
 
-                // Update hidden form field value
+                // Update hidden form field value (THIS IS THE CRITICAL LINE)
                 inputField.value = value;
             }
+
+            // Loop through all dynamic rating containers and attach event listeners
+            ratingContainers.forEach(container => {
+                const questionId = container.id.split('-')[1];
+                const inputField = document.getElementById(`rating_${questionId}`);
+
+                // 1. Initialize stars visually and attach click event
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('span');
+                    star.className = 'rating-star';
+                    star.textContent = '★';
+                    star.setAttribute('data-value', i);
+                    
+                    // Attach event listener using closure to pass correct values
+                    star.addEventListener('click', function() {
+                        setRating(container, inputField, i);
+                    });
+
+                    container.appendChild(star);
+                }
+            });
         });
     </script>
 </body>
