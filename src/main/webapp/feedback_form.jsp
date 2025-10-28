@@ -1,9 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="com.app.rating.model.Course" %>
-<%@ page import="com.app.rating.model.Question" %>
 <%@ page import="com.app.rating.service.FeedbackService" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Optional" %>
 
 <%
@@ -27,9 +25,7 @@
     Course course = courseOpt.get();
     request.setAttribute("courseDetail", course);
     
-    // 2. Fetch Questions from the Service
-    List<Question> questionList = service.getAllQuestions();
-    request.setAttribute("questionList", questionList);
+    // NOTE: The logic to fetch questions is REMOVED.
 %>
 
 <!DOCTYPE html>
@@ -60,37 +56,39 @@
             </div>
         </c:if>
 
-        <form action="submitFeedback" method="POST" id="feedbackForm">
+        <form action="submitFeedback" method="POST">
             <input type="hidden" name="courseId" value="${courseDetail.id}">
 
-            <div class="space-y-6" id="questionsContainer">
-                <c:forEach var="q" items="${questionList}" varStatus="loop">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">${loop.index + 1}. ${q.text} 
-                            <c:if test="${q.required}"><span class="text-red-500">*</span></c:if>
-                        </label>
-                        
-                        <c:choose>
-                            <c:when test="${q.type == 'RATING'}">
-                                <div class="flex space-x-1 text-3xl text-gray-300 rating-container" 
-                                     id="stars-${q.id}" 
-                                     data-question-id="${q.id}"
-                                     data-current-rating="0"> 
-                                    </div>
-                                <input type="hidden" id="rating_${q.id}" name="rating_${q.id}" value="">
-                            </c:when>
-                            <c:when test="${q.type == 'TEXT'}">
-                                <textarea name="text_${q.id}" id="text_${q.id}" rows="3" 
-                                    class="w-full border border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
-                                    placeholder="Enter your response here"
-                                    <c:if test="${q.required}">required minlength="10"</c:if>
-                                ></textarea>
-                                <c:if test="${!q.required}"><p class="text-xs text-gray-500 mt-1">Optional comment.</p></c:if>
-                            </c:when>
-                        </c:choose>
-                    </div>
-                </c:forEach>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">1. Teaching Quality (1=Poor, 5=Excellent)</label>
+                    <div class="flex space-x-1 text-3xl text-gray-300" id="stars-quality">
+                        </div>
+                    <input type="hidden" id="qualityRating" name="qualityRating" required value="0">
                 </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">2. Assignment Load/Relevance (1=Useless, 5=Highly Relevant)</label>
+                    <div class="flex space-x-1 text-3xl text-gray-300" id="stars-assignments">
+                    </div>
+                    <input type="hidden" id="assignmentRating" name="assignmentRating" required value="0">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">3. Grading Fairness (1=Unfair, 5=Very Fair)</label>
+                    <div class="flex space-x-1 text-3xl text-gray-300" id="stars-grading">
+                    </div>
+                    <input type="hidden" id="gradingRating" name="gradingRating" required value="0">
+                </div>
+
+                <div>
+                    <label for="reviewText" class="block text-sm font-medium text-gray-700 mb-2">4. Written Review (Anonymous)</label>
+                    <textarea id="reviewText" name="reviewText" rows="4" minlength="10" required 
+                        class="w-full border border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
+                        placeholder="Share your anonymous feedback (min 10 words)"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">This review will be public on the course page.</p>
+                </div>
+            </div>
 
             <div class="mt-8 flex justify-between space-x-3">
                 <a href="courses" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition border">
@@ -105,78 +103,48 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('feedbackForm');
+            const ratingParams = [
+                { containerId: 'stars-quality', inputId: 'qualityRating' },
+                { containerId: 'stars-assignments', inputId: 'assignmentRating' },
+                { containerId: 'stars-grading', inputId: 'gradingRating' }
+            ];
 
-            // Function to update visual stars and the DATA attribute
-            function setRating(container, ratingValue) {
+            // Function to handle star selection visual and data update
+            function setRating(container, inputField, value) {
                 // Update visual stars
                 container.querySelectorAll('.rating-star').forEach(star => {
                     const starValue = parseInt(star.getAttribute('data-value'));
-                    if (starValue <= ratingValue) {
+                    if (starValue <= value) {
                         star.classList.add('filled');
                     } else {
                         star.classList.remove('filled');
                     }
                 });
 
-                // Update the data attribute on the container div (The source of truth)
-                container.setAttribute('data-current-rating', ratingValue);
+                // Update hidden form field value (The critical step)
+                inputField.value = value;
             }
 
-            // Initial Star Rendering & Event Delegation Setup
-            const ratingContainers = document.querySelectorAll('.rating-container');
-            ratingContainers.forEach(container => {
+            // Initialization loop
+            ratingParams.forEach(param => {
+                const container = document.getElementById(param.containerId);
+                const inputField = document.getElementById(param.inputId);
+
                 for (let i = 1; i <= 5; i++) {
                     const star = document.createElement('span');
                     star.className = 'rating-star';
                     star.textContent = '★';
                     star.setAttribute('data-value', i);
+                    
+                    // Attach event listener directly
+                    star.addEventListener('click', (function(ratingValue) {
+                        return function() {
+                            setRating(container, inputField, ratingValue);
+                        };
+                    })(i));
+
                     container.appendChild(star);
                 }
-            });
-            
-            // Attach ONE event listener to the form element for delegation
-            form.addEventListener('click', function(event) {
-                let target = event.target;
-                if (target.classList.contains('rating-star')) {
-                    let container = target.closest('.rating-container');
-                    if (!container) return; 
-
-                    const ratingValue = parseInt(target.getAttribute('data-value'));
-                    setRating(container, ratingValue);
-                }
-            });
-
-
-            // *** FINAL GUARANTEE FIX: Intercept submission and manually set required rating values ***
-            form.addEventListener('submit', function(event) {
-                let ratingMissing = false;
-
-                ratingContainers.forEach(container => {
-                    const questionId = container.getAttribute('data-question-id');
-                    const hiddenInput = document.getElementById(`rating_${questionId}`);
-                    const selectedRating = container.getAttribute('data-current-rating');
-
-                    if (hiddenInput) {
-                        // CRITICAL FIX: Force the value from the data attribute into the input field
-                        hiddenInput.value = selectedRating;
-                        
-                        // If the field is required (we check for its existence for simplicity)
-                        // and the value is still '0', prevent submission.
-                        // NOTE: Server-side validation is still the final authority.
-                        if (hiddenInput.hasAttribute('required') && parseInt(selectedRating) === 0) {
-                            ratingMissing = true;
-                        }
-                    }
-                });
-                
-                if (ratingMissing) {
-                    // Prevent submission and show native HTML form validation message
-                    event.preventDefault();
-                    // NOTE: The server redirect will handle the persistent error message using the 'Error!' block.
-                }
-                
-                // If rating is present, the form proceeds and the server handles text validation.
             });
         });
     </script>
