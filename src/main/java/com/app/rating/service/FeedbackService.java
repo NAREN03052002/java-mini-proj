@@ -2,7 +2,7 @@ package com.app.rating.service;
 
 import com.app.rating.model.Course;
 import com.app.rating.model.Feedback;
-import com.app.rating.model.Question; // CRITICAL: Now imported correctly
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -18,9 +18,6 @@ public class FeedbackService {
     private static final List<Course> COURSE_DB = new ArrayList<>();
     private static final List<Feedback> FEEDBACK_DB = new ArrayList<>();
     private static int FEEDBACK_ID_COUNTER = 1;
-
-    // *** Static storage for questions ***
-    private static final List<Question> GLOBAL_QUESTIONS = new ArrayList<>();
 
     // Static initializer to populate initial courses and some mock data
     static {
@@ -40,21 +37,6 @@ public class FeedbackService {
         f2.setCourseId(101); f2.setQualityRating(4); f2.setAssignmentRating(3); f2.setGradingRating(4); 
         f2.setReviewText("Assignments were a bit heavy but fair grading."); f2.setTimestamp(System.currentTimeMillis() - 10000);
         addFeedback(f2);
-
-        // *** UPDATED: Initialize Global Questions with NEW CUSTOM QUESTIONS ***
-        
-        // Original 3 fixed rating parameters
-        GLOBAL_QUESTIONS.add(new Question(1, "Teaching Quality (1=Poor, 5=Excellent)", "RATING", true));
-        GLOBAL_QUESTIONS.add(new Question(2, "Assignment Load/Relevance (1=Low, 5=High)", "RATING", true));
-        GLOBAL_QUESTIONS.add(new Question(3, "Grading Fairness (1=Unfair, 5=Very Fair)", "RATING", true));
-        
-        // New Custom Rating Questions
-        GLOBAL_QUESTIONS.add(new Question(4, "Professor's engagement with students", "RATING", true));
-        GLOBAL_QUESTIONS.add(new Question(5, "Clarity of learning objectives", "RATING", true));
-        
-        // New Custom Text Field Questions (including the original review text, now question 6)
-        GLOBAL_QUESTIONS.add(new Question(6, "Written Review (Anonymous)", "TEXT", true)); // Making the primary review required
-        GLOBAL_QUESTIONS.add(new Question(7, "What specific topics would you like more focus on?", "TEXT", false));
     }
     // -------------------------------------------------------------------
 
@@ -67,20 +49,15 @@ public class FeedbackService {
     }
 
     /**
-     * Retrieves a single course by ID, ensuring averages are calculated.
+     * Retrieves a single course by ID.
      */
     public Optional<Course> getCourseById(int id) {
         Optional<Course> courseOpt = COURSE_DB.stream().filter(c -> c.getId() == id).findFirst();
         courseOpt.ifPresent(this::calculateCourseAverages); 
         return courseOpt;
     }
-
-    /**
-     * Retrieves all available feedback questions.
-     */
-    public List<Question> getAllQuestions() {
-        return GLOBAL_QUESTIONS;
-    }
+    
+    // NOTE: The getAllQuestions() method is REMOVED.
 
     private void calculateCourseAverages(Course course) {
         List<Feedback> reviews = FEEDBACK_DB.stream().filter(f -> f.getCourseId() == course.getId()).collect(Collectors.toList());
@@ -94,8 +71,6 @@ public class FeedbackService {
             return;
         }
 
-        // NOTE: In the future, this must be updated to average scores from the dynamic answers map.
-        // For now, it uses the fixed fields (Quality, Assignments, Grading).
         double sumQuality = reviews.stream().mapToInt(Feedback::getQualityRating).sum();
         double sumAssignments = reviews.stream().mapToInt(Feedback::getAssignmentRating).sum();
         double sumGrading = reviews.stream().mapToInt(Feedback::getGradingRating).sum();
@@ -126,7 +101,7 @@ public class FeedbackService {
     }
 
     /**
-     * Allows creation of new courses (used by CreateCourseServlet).
+     * Allows creation of new courses (retained functionality).
      */
     public static void addCourse(Course newCourse) {
         COURSE_DB.add(newCourse);
