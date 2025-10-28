@@ -27,7 +27,7 @@
     Course course = courseOpt.get();
     request.setAttribute("courseDetail", course);
     
-    // 2. *** NEW: Fetch Questions from the Service (Preparing for dynamic rendering) ***
+    // 2. Fetch Questions from the Service (Now guaranteed to work after FeedbackService update)
     List<Question> questionList = service.getAllQuestions();
     request.setAttribute("questionList", questionList);
 %>
@@ -60,39 +60,34 @@
             </div>
         </c:if>
 
-        <form action="submitFeedback" method="POST">
+        <form action="submitFeedback" method="POST" id="feedbackForm">
             <input type="hidden" name="courseId" value="${courseDetail.id}">
 
             <div class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">1. Teaching Quality (1=Poor, 5=Excellent)</label>
-                    <div class="flex space-x-1 text-3xl text-gray-300" id="stars-quality">
+                <c:forEach var="q" items="${questionList}" varStatus="loop">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">${loop.index + 1}. ${q.text} 
+                            <c:if test="${q.required}"><span class="text-red-500">*</span></c:if>
+                        </label>
+                        
+                        <c:choose>
+                            <c:when test="${q.type == 'RATING'}">
+                                <div class="flex space-x-1 text-3xl text-gray-300 rating-container" id="stars-${q.id}">
+                                </div>
+                                <input type="hidden" id="rating_${q.id}" name="rating_${q.id}" value="0" <c:if test="${q.required}">required</c:if>>
+                            </c:when>
+                            <c:when test="${q.type == 'TEXT'}">
+                                <textarea name="text_${q.id}" rows="3" 
+                                    class="w-full border border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
+                                    placeholder="Enter your response here"
+                                    <c:if test="${q.required}">required minlength="10"</c:if>
+                                ></textarea>
+                                <c:if test="${!q.required}"><p class="text-xs text-gray-500 mt-1">Optional comment.</p></c:if>
+                            </c:when>
+                        </c:choose>
                     </div>
-                    <input type="hidden" id="qualityRating" name="qualityRating" required value="0">
+                </c:forEach>
                 </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">2. Assignment Load/Relevance (1=Useless, 5=Highly Relevant)</label>
-                    <div class="flex space-x-1 text-3xl text-gray-300" id="stars-assignments">
-                    </div>
-                    <input type="hidden" id="assignmentRating" name="assignmentRating" required value="0">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">3. Grading Fairness (1=Unfair, 5=Very Fair)</label>
-                    <div class="flex space-x-1 text-3xl text-gray-300" id="stars-grading">
-                    </div>
-                    <input type="hidden" id="gradingRating" name="gradingRating" required value="0">
-                </div>
-
-                <div>
-                    <label for="reviewText" class="block text-sm font-medium text-gray-700 mb-2">4. Written Review (Anonymous)</label>
-                    <textarea id="reviewText" name="reviewText" rows="4" minlength="10" required 
-                        class="w-full border border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
-                        placeholder="Share your anonymous feedback (min 10 words)"></textarea>
-                    <p class="text-xs text-gray-500 mt-1">This review will be public on the course page.</p>
-                </div>
-            </div>
 
             <div class="mt-8 flex justify-between space-x-3">
                 <a href="courses" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition border">
@@ -107,29 +102,26 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const ratingParams = [
-                { containerId: 'stars-quality', inputId: 'qualityRating' },
-                { containerId: 'stars-assignments', inputId: 'assignmentRating' },
-                { containerId: 'stars-grading', inputId: 'gradingRating' }
-            ];
+            const ratingContainers = document.querySelectorAll('.rating-container');
+            
+            ratingContainers.forEach(container => {
+                const questionId = container.id.split('-')[1];
+                const inputField = document.getElementById(`rating_${questionId}`);
 
-            function initializeStars() {
-                ratingParams.forEach(param => {
-                    const container = document.getElementById(param.containerId);
-                    const inputField = document.getElementById(param.inputId);
+                // 1. Initialize stars visually
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('span');
+                    star.className = 'rating-star';
+                    star.textContent = '★';
+                    star.setAttribute('data-value', i);
+                    star.addEventListener('click', () => setRating(container, inputField, i));
+                    container.appendChild(star);
+                }
+            });
 
-                    for (let i = 1; i <= 5; i++) {
-                        const star = document.createElement('span');
-                        star.className = 'rating-star';
-                        star.textContent = '★';
-                        star.setAttribute('data-value', i);
-                        star.addEventListener('click', () => setRating(container, inputField, i));
-                        container.appendChild(star);
-                    }
-                });
-            }
-
+            // 2. Function to handle star selection visual and data update
             function setRating(container, inputField, value) {
+                // Update visual stars
                 container.querySelectorAll('.rating-star').forEach(star => {
                     const starValue = parseInt(star.getAttribute('data-value'));
                     if (starValue <= value) {
@@ -138,10 +130,10 @@
                         star.classList.remove('filled');
                     }
                 });
+
+                // Update hidden form field value
                 inputField.value = value;
             }
-
-            initializeStars();
         });
     </script>
 </body>
