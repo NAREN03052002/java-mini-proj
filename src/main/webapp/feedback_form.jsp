@@ -5,7 +5,7 @@
 <%@ page import="java.util.Optional" %>
 
 <%
-    // --- Controller Logic (Scriptlet) ---
+    // Controller logic to fetch the course details for the form header
     int courseId = 0;
     try {
         courseId = Integer.parseInt(request.getParameter("courseId"));
@@ -24,8 +24,6 @@
     }
     Course course = courseOpt.get();
     request.setAttribute("courseDetail", course);
-    
-    // NOTE: The logic to fetch questions is REMOVED.
 %>
 
 <!DOCTYPE html>
