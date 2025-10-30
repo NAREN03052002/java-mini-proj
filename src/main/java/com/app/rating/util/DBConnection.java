@@ -29,6 +29,7 @@ public class DBConnection {
         }
         
         System.out.println("Attempting connection to Render PostgreSQL...");
+        // DriverManager automatically attempts to close any resources it opens on connection failure.
         return DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
     }
 
