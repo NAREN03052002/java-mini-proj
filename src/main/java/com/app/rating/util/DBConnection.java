@@ -4,28 +4,29 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * Handles establishing and closing the JDBC connection to the PostgreSQL database.
+ */
 public class DBConnection {
 
-    // *** RENDER POSTGRESQL CREDENTIALS ***
-    // Replace these placeholders with your actual Render DB connection details
-    private static final String URL = "jdbc:postgresql://<YOUR_RENDER_HOST>:<YOUR_RENDER_PORT>/<YOUR_DATABASE_NAME>";
-    private static final String USER = "<YOUR_DATABASE_USER>";
-    private static final String PASSWORD = "<YOUR_DATABASE_PASSWORD>";
+    // *** IMPORTANT: REPLACE THESE WITH YOUR RENDER POSTGRESQL DETAILS ***
+    // Example: jdbc:postgresql://<external_host>:<port>/<database_name>
+    private static final String URL = "jdbc:postgresql://YOUR_RENDER_HOST:5432/YOUR_DATABASE_NAME?ssl=true&sslmode=require";
+    private static final String USER = "YOUR_DATABASE_USER";
+    private static final String PASSWORD = "YOUR_DATABASE_PASSWORD";
     
-    // RENDER NOTE: Render may require setting the 'sslmode=require' property in the URL 
-    // for secure connections, depending on your setup. E.g., "...db_name?ssl=true&sslmode=require"
+    // NOTE: The '?ssl=true&sslmode=require' is typically necessary for secure connections on cloud hosts like Render.
 
     public static Connection getConnection() throws SQLException {
-        // Load the PostgreSQL JDBC driver (modern JDBC often does this automatically, but it's safe practice)
+        // Load the PostgreSQL JDBC driver
         try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
-            System.err.println("PostgreSQL JDBC Driver not found.");
-            e.printStackTrace();
-            throw new SQLException("PostgreSQL Driver not available.");
+            System.err.println("PostgreSQL JDBC Driver not found. Check pom.xml dependency.");
+            throw new SQLException("PostgreSQL Driver not available.", e);
         }
         
-        System.out.println("Connecting to database...");
+        System.out.println("Attempting connection to PostgreSQL...");
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
