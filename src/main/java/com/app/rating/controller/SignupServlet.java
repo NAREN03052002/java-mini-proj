@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-// *** FIX: ADD MISSING IMPORT ***
 import java.sql.SQLException; 
 
 @WebServlet("/signup")
@@ -22,12 +21,12 @@ public class SignupServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
 
-        String username = request.getParameter("username");
-        String email = request.getParameter("email");
+        String username = request.getParameter("username").trim();
+        String email = request.getParameter("email").trim();
         String password = request.getParameter("password");
         
         // Basic Server-Side Validation
-        if (username == null || username.isEmpty() || password == null || password.isEmpty() || email == null || email.isEmpty()) {
+        if (username.isEmpty() || password.isEmpty() || email.isEmpty()) {
             response.sendRedirect("signup.jsp?error=All fields are required.");
             return;
         }
@@ -39,7 +38,7 @@ public class SignupServlet extends HttpServlet {
                 return;
             }
             
-            // 1. Hash the password
+            // 1. CRITICAL STEP: Hash the password ONCE using the utility
             String hashedPassword = PasswordUtil.hashPassword(password);
 
             // 2. Create User Model
@@ -56,7 +55,7 @@ public class SignupServlet extends HttpServlet {
                 response.sendRedirect("signup.jsp?error=Registration failed due to database issue.");
             }
 
-        } catch (SQLException e) { // Catches the SQLException from the DAO layer
+        } catch (SQLException e) { 
             e.printStackTrace();
             response.sendRedirect("signup.jsp?error=Database error during registration.");
         }
