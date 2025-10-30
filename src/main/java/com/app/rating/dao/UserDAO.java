@@ -15,33 +15,29 @@ import java.sql.SQLException;
 public class UserDAO {
 
     public boolean registerUser(User user) throws SQLException {
+        // NOTE: The user object MUST contain the hashed password when passed to this method.
         String sql = "INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)";
         Connection conn = null;
         PreparedStatement stmt = null;
         
         try {
             conn = DBConnection.getConnection();
-            // Use RETURN_GENERATED_KEYS to get the auto-generated user_id (not strictly used here, but good practice)
             stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             
-            // Hash the password before storing it (the User model holds the plaintext here)
-            String hashedPassword = PasswordUtil.hashPassword(user.getPasswordHash());
-
+            // The model already contains the hash, set by the SignupServlet
             stmt.setString(1, user.getUsername());
-            stmt.setString(2, hashedPassword);
+            stmt.setString(2, user.getPasswordHash()); // Use the pre-hashed value
             stmt.setString(3, user.getEmail());
 
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
             
         } catch (SQLException e) {
-            // *** CRITICAL LOGGING: Prints the specific SQL error to the console ***
             System.err.println("SQL Error during user registration:");
             e.printStackTrace();
-            throw e; // Re-throw the exception for the Servlet to catch and handle the redirect
+            throw e; 
         } finally {
-            // Ensure resources are closed, even if an error occurs
-            if (stmt != null) try { stmt.close(); } catch (SQLException e) { /* Log or ignore close failure */ }
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) { /* ignore */ }
             DBConnection.closeConnection(conn);
         }
     }
@@ -53,8 +49,8 @@ public class UserDAO {
         ResultSet rs = null;
         
         try {
-             conn = DBConnection.getConnection();
-             stmt = conn.prepareStatement(sql);
+            conn = DBConnection.getConnection();
+            stmt = conn.prepareStatement(sql);
 
             stmt.setString(1, username);
 
@@ -83,7 +79,7 @@ public class UserDAO {
     public User validateLogin(String username, String password) throws SQLException {
         User user = getUserByUsername(username);
         if (user != null) {
-            // Checks plaintext password against the stored hash using BCrypt
+            // CRITICAL CHECK: Use the PasswordUtil to check the plaintext password against the stored hash
             if (PasswordUtil.checkPassword(password, user.getPasswordHash())) {
                 return user; // Success
             }
