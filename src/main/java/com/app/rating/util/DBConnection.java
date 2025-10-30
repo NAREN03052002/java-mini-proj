@@ -7,11 +7,11 @@ import java.sql.SQLException;
 public class DBConnection {
 
     // *** RENDER POSTGRESQL CREDENTIALS EXTRACTED FROM SCREENSHOT ***
-    private static final String DB_HOST = "dpg-d3stpvgi2l27c73dudc40-a";
+    private static final String DB_HOST = "dpg-d3stp6vgi27c73dudc40-a";
     private static final String DB_PORT = "5432";
     private static final String DB_NAME = "javaproj_db";
     private static final String DB_USER = "javaproj_db_user";
-    private static final String DB_PASSWORD = "vhXs80wih4tI0xa0nDcIZ1jsIemnZpyiB0";
+    private static final String DB_PASSWORD = "vhXs8OwUh4tDxaOn6ciZljsImnZpyl80";
     
     // Construct the JDBC URL with SSL enabled, as required by Render's external URL.
     private static final String URL = 
