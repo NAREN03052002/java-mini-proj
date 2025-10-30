@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+// *** FIX: ADD MISSING IMPORT ***
+import java.sql.SQLException; 
 
 @WebServlet("/signup")
 public class SignupServlet extends HttpServlet {
@@ -54,7 +56,7 @@ public class SignupServlet extends HttpServlet {
                 response.sendRedirect("signup.jsp?error=Registration failed due to database issue.");
             }
 
-        } catch (SQLException e) {
+        } catch (SQLException e) { // Catches the SQLException from the DAO layer
             e.printStackTrace();
             response.sendRedirect("signup.jsp?error=Database error during registration.");
         }
