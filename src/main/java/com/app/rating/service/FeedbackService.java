@@ -2,7 +2,10 @@ package com.app.rating.service;
 
 import com.app.rating.model.Course;
 import com.app.rating.model.Feedback;
+import com.app.rating.dao.CourseDAO; // NEW: To fetch/save Course data
+import com.app.rating.dao.FeedbackDAO; // NEW: To fetch/save Feedback data
 
+import java.sql.SQLException; // CRITICAL: Must be imported to handle DB errors
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -10,57 +13,47 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Handles business logic, data simulation, and calculation of average ratings.
+ * Handles business logic, retrieving data from DAOs, and calculating average ratings.
+ * NOTE: All static in-memory lists (COURSE_DB, FEEDBACK_DB) are REMOVED.
  */
 public class FeedbackService {
 
-    // --- Simulated Data Store (In-Memory replacement for a Database) ---
-    private static final List<Course> COURSE_DB = new ArrayList<>();
-    private static final List<Feedback> FEEDBACK_DB = new ArrayList<>();
-    private static int FEEDBACK_ID_COUNTER = 1;
+    // Inject DAO dependencies
+    private CourseDAO courseDAO = new CourseDAO();
+    private FeedbackDAO feedbackDAO = new FeedbackDAO();
+    
+    // NOTE: The static initializer block is REMOVED as data is now loaded from the database.
 
-    // Static initializer to populate initial courses and some mock data
-    static {
-        // Initial Course Listings
-        COURSE_DB.add(new Course(101, "CS201", "Data Structures", "Dr. Elena Rossi", "Fall 2024"));
-        COURSE_DB.add(new Course(202, "MA101", "Calculus I", "Prof. John Smith", "Fall 2024"));
-        COURSE_DB.add(new Course(303, "HI305", "Modern History", "Dr. Anya Sharma", "Spring 2024"));
-
-        // Mock Feedback 1
-        Feedback f1 = new Feedback(); 
-        f1.setCourseId(101); f1.setQualityRating(5); f1.setAssignmentRating(4); f1.setGradingRating(5); 
-        f1.setReviewText("Excellent professor, highly recommended."); f1.setTimestamp(System.currentTimeMillis());
-        addFeedback(f1); 
+    /**
+     * Retrieves all courses from the database and calculates their current average ratings.
+     */
+    public List<Course> getAllCoursesWithRatings() throws SQLException {
+        // Fetch all courses from the DB
+        List<Course> courses = courseDAO.getAllCourses();
         
-        // Mock Feedback 2
-        Feedback f2 = new Feedback(); 
-        f2.setCourseId(101); f2.setQualityRating(4); f2.setAssignmentRating(3); f2.setGradingRating(4); 
-        f2.setReviewText("Assignments were a bit heavy but fair grading."); f2.setTimestamp(System.currentTimeMillis() - 10000);
-        addFeedback(f2);
-    }
-    // -------------------------------------------------------------------
-
-    /**
-     * Retrieves all courses and calculates their current average ratings.
-     */
-    public List<Course> getAllCoursesWithRatings() {
-        for (Course c : COURSE_DB) calculateCourseAverages(c);
-        return COURSE_DB;
+        // Calculate averages for each course (requires feedback data from DB)
+        for (Course c : courses) {
+            calculateCourseAverages(c);
+        }
+        return courses;
     }
 
     /**
-     * Retrieves a single course by ID.
+     * Retrieves a single course by ID from the database.
      */
-    public Optional<Course> getCourseById(int id) {
-        Optional<Course> courseOpt = COURSE_DB.stream().filter(c -> c.getId() == id).findFirst();
-        courseOpt.ifPresent(this::calculateCourseAverages); 
-        return courseOpt;
+    public Optional<Course> getCourseById(int id) throws SQLException {
+        // Since CourseDAO does not have a single get method, we fetch all and filter, 
+        // ensuring ratings are calculated.
+        List<Course> courses = getAllCoursesWithRatings();
+        return courses.stream().filter(c -> c.getId() == id).findFirst();
     }
     
-    // NOTE: The getAllQuestions() method is REMOVED.
+    // NOTE: The getAllQuestions() method is REMOVED, as it was part of the failed dynamic upgrade.
 
-    private void calculateCourseAverages(Course course) {
-        List<Feedback> reviews = FEEDBACK_DB.stream().filter(f -> f.getCourseId() == course.getId()).collect(Collectors.toList());
+    private void calculateCourseAverages(Course course) throws SQLException {
+        // Fetch all feedback for this specific course from the DB
+        List<Feedback> reviews = feedbackDAO.getFeedbackByCourseId(course.getId());
+        
         if (reviews.isEmpty()) {
             course.setTotalRatings(0);
             course.setAvgQuality(0.0);
@@ -88,27 +81,30 @@ public class FeedbackService {
         course.setAvgGrading(avgG);
         course.setOverallRating(overall);
         
+        // Sorting is done in the DAO, but we keep the sorting call here just in case.
         reviews.sort(Comparator.comparing(Feedback::getTimestamp).reversed());
         course.setReviews(reviews);
     }
 
     /**
-     * Simulates adding a new feedback entry to the database.
+     * Saves a new feedback entry via the FeedbackDAO.
      */
-    public static void addFeedback(Feedback f) {
-        f.setId(FEEDBACK_ID_COUNTER++);
-        FEEDBACK_DB.add(f);
+    public boolean addFeedback(Feedback feedback) throws SQLException {
+        // Note: The static addFeedback() is replaced with this instance method using the DAO.
+        return feedbackDAO.addFeedback(feedback);
     }
 
     /**
-     * Allows creation of new courses (retained functionality).
+     * Saves a new course via the CourseDAO.
      */
-    public static void addCourse(Course newCourse) {
-        COURSE_DB.add(newCourse);
+    public Course addCourse(Course newCourse) throws SQLException {
+        // Note: The static addCourse() is replaced with this instance method using the DAO.
+        return courseDAO.addCourse(newCourse);
     }
     
-    public Optional<Course> getTrendingCourse() {
-        return COURSE_DB.stream().peek(this::calculateCourseAverages)
+    public Optional<Course> getTrendingCourse() throws SQLException {
+        List<Course> courses = getAllCoursesWithRatings();
+        return courses.stream()
                 .filter(c -> c.getTotalRatings() > 0)
                 .max(Comparator.comparing(Course::getOverallRating));
     }
