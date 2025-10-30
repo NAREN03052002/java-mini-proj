@@ -28,10 +28,19 @@
                     </div>
                 </c:if>
 
-                <a href="login.jsp" class="text-white hover:text-indigo-200 transition font-medium">Login</a>
-                <a href="signup.jsp" class="bg-white text-indigo-700 py-1.5 px-4 rounded-full text-sm font-semibold hover:bg-gray-100 transition shadow-md">Signup</a>
-            </div>
-
+                <c:choose>
+                    <c:when test="${sessionScope.isLoggedIn}">
+                        <span class="text-white font-medium">
+                            Welcome, <span class="font-bold">${sessionScope.user.username}</span>!
+                        </span>
+                        <a href="logout" class="bg-red-500 text-white py-1.5 px-4 rounded-full text-sm font-semibold hover:bg-red-600 transition shadow-md">Logout</a>
+                    </c:when>
+                    <c:otherwise>
+                        <a href="login.jsp" class="text-white hover:text-indigo-200 transition font-medium">Login</a>
+                        <a href="signup.jsp" class="bg-white text-indigo-700 py-1.5 px-4 rounded-full text-sm font-semibold hover:bg-gray-100 transition shadow-md">Signup</a>
+                    </c:otherwise>
+                </c:choose>
+                </div>
         </div>
     </header>
 
