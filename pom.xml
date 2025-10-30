@@ -16,6 +16,7 @@
     </properties>
 
     <dependencies>
+        <!-- 1. Jakarta EE API (Provided by Tomcat) -->
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>
@@ -23,22 +24,37 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- 2. JSTL API & Implementation -->
         <dependency>
             <groupId>jakarta.servlet.jsp.jstl</groupId>
             <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
             <version>3.0.0</version>
-            </dependency>
-        
+        </dependency>
         <dependency>
             <groupId>org.glassfish.web</groupId>
             <artifactId>jakarta.servlet.jsp.jstl</artifactId>
             <version>3.0.1</version>
-            </dependency>
+        </dependency>
+        
+        <!-- 3. NEW: PostgreSQL JDBC Driver (For Render DB Connection) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+
+        <!-- 4. Recommended for Authentication: BCrypt Hashing Library (Superior to simple SHA-256) -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
     </dependencies>
 
     <build>
         <finalName>ROOT</finalName> 
         <plugins>
+            <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -49,6 +65,7 @@
                 </configuration>
             </plugin>
             
+            <!-- WAR Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
