@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+// *** FIX: ADD MISSING IMPORT ***
+import java.sql.SQLException; 
 
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
@@ -45,7 +47,7 @@ public class LoginServlet extends HttpServlet {
                 response.sendRedirect("login.jsp?error=Invalid username or password.");
             }
 
-        } catch (SQLException e) {
+        } catch (SQLException e) { // Catches the SQLException from the DAO layer
             e.printStackTrace();
             response.sendRedirect("login.jsp?error=Database error during login.");
         }
