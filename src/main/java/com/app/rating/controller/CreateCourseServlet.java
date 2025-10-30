@@ -15,7 +15,8 @@ import java.sql.SQLException;
 @WebServlet("/createCourse")
 public class CreateCourseServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    // *** FIX: Instantiate the service once ***
+    
+    // Instantiate the service once (instance variable)
     private FeedbackService service = new FeedbackService();
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
@@ -35,7 +36,7 @@ public class CreateCourseServlet extends HttpServlet {
             // In a DB-backed app, we let the DB generate the ID (pass ID 0 or ignore it).
             Course newCourse = new Course(0, code, name, professor, semester);
             
-            // *** FIX: Call the non-static method using the service instance ***
+            // *** FIX: Call the non-static method using the service INSTANCE ***
             service.addCourse(newCourse);
             
             // Redirect to the main course list
