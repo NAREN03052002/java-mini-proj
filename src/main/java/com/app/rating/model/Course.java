@@ -40,6 +40,9 @@ public class Course {
 
     public int getTotalRatings() { return totalRatings; }
     public void setTotalRatings(int totalRatings) { this.totalRatings = totalRatings; }
+    
+    // *** FIX: ADD MISSING SETTER FOR ID ***
+    public void setId(int id) { this.id = id; } 
 
     public double getAvgQuality() { return avgQuality; }
     public void setAvgQuality(double avgQuality) { this.avgQuality = avgQuality; }
