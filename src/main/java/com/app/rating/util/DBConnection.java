@@ -4,30 +4,32 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- * Handles establishing and closing the JDBC connection to the PostgreSQL database.
- */
 public class DBConnection {
 
-    // *** IMPORTANT: REPLACE THESE WITH YOUR RENDER POSTGRESQL DETAILS ***
-    // Example: jdbc:postgresql://<external_host>:<port>/<database_name>
-    private static final String URL = "jdbc:postgresql://YOUR_RENDER_HOST:5432/YOUR_DATABASE_NAME?ssl=true&sslmode=require";
-    private static final String USER = "YOUR_DATABASE_USER";
-    private static final String PASSWORD = "YOUR_DATABASE_PASSWORD";
+    // *** RENDER POSTGRESQL CREDENTIALS EXTRACTED FROM SCREENSHOT ***
+    private static final String DB_HOST = "dpg-d3stpvgi2l27c73dudc40-a";
+    private static final String DB_PORT = "5432";
+    private static final String DB_NAME = "javaproj_db";
+    private static final String DB_USER = "javaproj_db_user";
+    private static final String DB_PASSWORD = "vhXs80wih4tI0xa0nDcIZ1jsIemnZpyiB0";
     
-    // NOTE: The '?ssl=true&sslmode=require' is typically necessary for secure connections on cloud hosts like Render.
-
+    // Construct the JDBC URL with SSL enabled, as required by Render's external URL.
+    private static final String URL = 
+        "jdbc:postgresql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + 
+        "?ssl=true&sslmode=require";
+    
     public static Connection getConnection() throws SQLException {
         // Load the PostgreSQL JDBC driver
         try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
             System.err.println("PostgreSQL JDBC Driver not found. Check pom.xml dependency.");
+            e.printStackTrace();
             throw new SQLException("PostgreSQL Driver not available.", e);
         }
         
-        System.out.println("Attempting connection to PostgreSQL...");
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        System.out.println("Attempting connection to Render PostgreSQL...");
+        return DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
     }
 
     public static void closeConnection(Connection conn) {
