@@ -19,12 +19,19 @@
     <header class="bg-indigo-700 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-3xl font-extrabold tracking-tight">UniRate System</h1>
-            <c:if test="${not empty trendingCourse}">
-                <div class="text-sm bg-indigo-800 py-1.5 px-4 rounded-full shadow-md hidden sm:block">
-                    <span class="font-semibold mr-2">📈 Trending:</span>
-                    ${trendingCourse.code} (<fmt:formatNumber value="${trendingCourse.overallRating}" pattern="0.0"/> / 5)
-                </div>
-            </c:if>
+            
+            <div class="flex items-center space-x-4">
+                <c:if test="${not empty trendingCourse}">
+                    <div class="text-sm bg-indigo-800 py-1.5 px-4 rounded-full shadow-md hidden sm:block">
+                        <span class="font-semibold mr-2">📈 Trending:</span>
+                        ${trendingCourse.code} (<fmt:formatNumber value="${trendingCourse.overallRating}" pattern="0.0"/> / 5)
+                    </div>
+                </c:if>
+
+                <a href="login.jsp" class="text-white hover:text-indigo-200 transition font-medium">Login</a>
+                <a href="signup.jsp" class="bg-white text-indigo-700 py-1.5 px-4 rounded-full text-sm font-semibold hover:bg-gray-100 transition shadow-md">Signup</a>
+            </div>
+
         </div>
     </header>
 
